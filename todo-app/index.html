@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Simple To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        /* Add your CSS styling here */
+        form {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 8px;
+        }
+
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .todo {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>My To-Do List</h1>
+    <label>Create Todo</label>
+    <form id="todoForm">
+        <select name="user" id="userTodo" required>
+            <option value="" disabled selected>-- Select User --</option>
+        </select>
+        <input type="text" id="todoText" placeholder="Enter a new
+todo..." required>
+        <button type="submit">Add Todo</button>
+    </form>
+    <div id="todoList">
+        <!-- Todos will be displayed here -->
+    </div>
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        async function loadUser() {
+            const res = await fetch(`${API_BASE}/users`);
+            const users = await res.json();
+
+            const userList = document.getElementById('userTodo');// SELECT
+            // userList.innerHTML = '<option value="" disabled selected>-- Select User --</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.name;
+                userList.appendChild(option);
+            });
+
+        }
+
+        async function loadTodos() {
+            const res = await fetch(`${API_BASE}/todos`);
+            const todos = await res.json();
+
+            const todoList = document.getElementById('todoList');
+            todoList.innerHTML = '';
+
+            todos.forEach(todo => {
+                const div = document.createElement('div');
+                div.className = 'todo';
+
+                const user = document.createElement('span');
+                user.textContent = todo.user.name;
+
+                const category = document.createElement('span');
+                category.textContent = todo.category.name;
+
+                const id = document.createElement('span');
+                id.textContent = todo.id;
+
+                const text = document.createElement('span');
+                text.textContent = todo.text;
+
+                const completed = document.createElement('span');
+                completed.textContent = todo.completed ? 'Completed' : 'Uncompleted';
+
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'Delete';
+                delBtn.onclick = () => deleteTodo(todo.id);
+
+                div.appendChild(user);
+                div.appendChild(id);
+                div.appendChild(text);
+                div.appendChild(category);
+                div.appendChild(completed);
+
+                div.appendChild(delBtn);
+                todoList.appendChild(div);
+            });
+        }
+
+        async function addTodo(text, userID) {
+            await fetch(`${API_BASE}/todos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    text, 
+                    user_id: Number(userID),
+                 })
+            });
+
+            loadTodos();
+        }
+
+        async function deleteTodo(id) {
+            await fetch(`${API_BASE}/todos/${id}`, {
+                method: 'DELETE'
+            });
+
+            loadTodos();
+        }
+
+        document.getElementById('todoForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const input = document.getElementById('todoText');
+             const user = document.getElementById('userTodo');
+            addTodo(input.value, user.value);
+            input.value = '';
+        });
+
+        loadUser();
+        loadTodos();
+    </script>
+</body>
+
+</html>
